@@ -9,7 +9,11 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -34,10 +38,11 @@ public class GameScreen implements Screen {
     private final float ballSpeed = 15f;
 
     // Ресурсы
-    private Sprite enemySprite, ballSprite, pauseButton, bonusSprite;
+    private Sprite enemySprite, ballSprite, bonusSprite;
     private BitmapFont enemyFont, uiFont;
     private GlyphLayout uiLayout;
     private Texture backgroundTexture;
+    private Button exitButtonUI;
 
     // Камеры и вьюпорты
     private FitViewport gameViewport;
@@ -94,13 +99,31 @@ public class GameScreen implements Screen {
         stage = new Stage(uiViewport, game.batch);
         gameOverGroup = new GameOverGroup(game, this);
         stage.addActor(gameOverGroup);
+        createExitButton();
+    }
+
+    private void createExitButton() {
+        TextureRegion region = game.atlas.findRegion("ui_exit");
+        TextureRegionDrawable drawable = new TextureRegionDrawable(region);
+
+        exitButtonUI = new Button(drawable);
+        exitButtonUI.setSize(100, 106.666f);
+        exitButtonUI.setPosition(0, 1280 - 106.666f);
+
+        exitButtonUI.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                game.setScreen(game.startingScreen);
+            }
+        });
+
+        stage.addActor(exitButtonUI);
     }
 
     private void loadAssets() {
         enemySprite = game.atlas.createSprite("square");
         ballSprite = game.atlas.createSprite("ball");
         bonusSprite = game.atlas.createSprite("ui_money");
-        pauseButton = game.atlas.createSprite("ui_pause");
         backgroundTexture = new Texture(Gdx.files.internal("background.png"));
         backgroundTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
 
@@ -208,9 +231,6 @@ public class GameScreen implements Screen {
     }
 
     private void drawUI() {
-        // Кнопка паузы
-        game.batch.draw(pauseButton, 0f, 1280f - 108f, 100f, 106.666f);
-
         // Очки
         uiFont.setColor(Color.WHITE);
         String scoreText = String.valueOf(score);

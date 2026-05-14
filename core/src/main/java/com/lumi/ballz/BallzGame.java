@@ -12,13 +12,17 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.lumi.ballz.screens.GameScreen;
+import com.lumi.ballz.screens.LevelEditor;
 import com.lumi.ballz.screens.StartingScreen;
+
 
 public class BallzGame extends Game {
     public TextureAtlas atlas;
+    public TextureAtlas menuAtlas;
     public SpriteBatch batch;
     public StartingScreen startingScreen;
     public GameScreen gameScreen;
+    public LevelEditor levelEditor;
     public BitmapFont enemyFont;
     public BitmapFont uiFont;
     public Skin skin;
@@ -37,12 +41,14 @@ public class BallzGame extends Game {
 
         startingScreen = new StartingScreen(this);
         gameScreen = new GameScreen(this);
+        levelEditor = new LevelEditor(this);
 
         this.setScreen(startingScreen);
     }
 
     private void loadAssets(){
         atlas = new TextureAtlas(Gdx.files.internal("atlas/pack.atlas"));
+        menuAtlas = new TextureAtlas(Gdx.files.internal("atlas/menu_pack.atlas"));
 
         enemyFont = new BitmapFont(Gdx.files.internal("font.fnt"));
         enemyFont.setUseIntegerPositions(false);

@@ -1,0 +1,10 @@
+menu_pack.png
+size:512,512
+filter:MipMapLinearLinear,MipMapLinearLinear
+repeat:none
+menu_editor
+bounds:2,306,400,150
+menu_exit
+bounds:2,154,400,150
+menu_start
+bounds:2,2,400,150

@@ -3,13 +3,15 @@ package com.lumi.ballz.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.lumi.ballz.BallzGame;
@@ -17,89 +19,111 @@ import com.lumi.ballz.BallzGame;
 public class StartingScreen implements Screen {
     private final BallzGame game;
 
-    // Константы мира
-    private final int ux = 7;
-    private final int uy = 12;
-
-    // Ресурсы
     private Skin skin;
-    private TextButton.TextButtonStyle buttonStyle;
     private Stage stage;
-    private TextButton button;
-
-    // Камеры и вьюпорты
+    private Texture backgroundTexture;
     private ExtendViewport uiViewport;
+
+    private final float BUTTON_WIDTH = 400f;
+    private final float BUTTON_HEIGHT = 150f;
+    private final float BUTTON_SPACING = 40f;
 
     public StartingScreen(BallzGame game) {
         this.game = game;
         uiViewport = new ExtendViewport(720, 1280);
 
         loadAssets();
-        initButtons();
+        initUI();
     }
 
-    private void loadAssets(){
+    private void loadAssets() {
+        backgroundTexture = new Texture(Gdx.files.internal("background.png"));
+        backgroundTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         skin = new Skin();
-        Pixmap pixmap = new Pixmap(100, 50, Pixmap.Format.RGBA8888);
-        pixmap.setColor(Color.WHITE);
-        pixmap.fill();
-        skin.add("white", new Texture(pixmap));
-
-        buttonStyle = new TextButton.TextButtonStyle();
-        buttonStyle.up = skin.newDrawable("white", Color.RED);
-        buttonStyle.down = skin.newDrawable("white", Color.PURPLE);
-        buttonStyle.font = game.uiFont;
     }
 
-    private void initButtons(){
+    private void initUI() {
         stage = new Stage(uiViewport);
 
+        Table table = new Table();
+        table.setFillParent(true); // Таблица растягивается на весь Stage
 
-        button = new TextButton("Enter the game", buttonStyle);
-        button.setSize(200, 80);
-        button.setPosition(720 / 2f - 100, 1280 / 2f - 40);
+        // Создаем кнопки и добавляем их в таблицу
+        table.add(createButton("menu_start", () -> game.setScreen(game.gameScreen)))
+            .size(BUTTON_WIDTH, BUTTON_HEIGHT)
+            .padBottom(BUTTON_SPACING);
+        table.row();
 
+        table.add(createButton("menu_editor", () -> game.setScreen(game.levelEditor)))
+            .size(BUTTON_WIDTH, BUTTON_HEIGHT)
+            .padBottom(BUTTON_SPACING);
+        table.row();
+
+        table.add(createButton("menu_exit", Gdx.app::exit))
+            .size(BUTTON_WIDTH, BUTTON_HEIGHT);
+
+        stage.addActor(table);
+    }
+
+    private Button createButton(String regionName, Runnable action) {
+        TextureRegion region = game.menuAtlas.findRegion(regionName);
+
+        // Защита от опечаток в названиях регионов
+        if (region == null) {
+            Gdx.app.error("UI", "Region not found: " + regionName);
+            return new Button();
+        }
+
+        Button button = new Button(new TextureRegionDrawable(region));
         button.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                game.nickname = "damn";
-                game.setScreen(game.gameScreen);
+                action.run();
             }
         });
-
-        stage.addActor(button);
+        return button;
     }
 
     @Override
-    public void render(float delta){
-        ScreenUtils.clear(Color.DARK_GRAY);
+    public void render(float delta) {
+        ScreenUtils.clear(Color.BLACK);
+
+        // Сначала фон
         game.batch.setProjectionMatrix(uiViewport.getCamera().combined);
         game.batch.begin();
-
-        stage.act(Gdx.graphics.getDeltaTime());
-        stage.draw();
-
+        game.batch.draw(backgroundTexture, 0, 0, uiViewport.getWorldWidth(), uiViewport.getWorldHeight());
         game.batch.end();
+
+        // Потом интерфейс
+        stage.act(delta);
+        stage.draw();
     }
 
     @Override
-    public void resize(int width, int height){
+    public void show() {
+        Gdx.input.setInputProcessor(stage);
+    }
+
+    @Override
+    public void resize(int width, int height) {
         uiViewport.update(width, height, true);
     }
 
     @Override
-    public void hide(){Gdx.input.setInputProcessor(null);}
+    public void hide() {
+        Gdx.input.setInputProcessor(null);
+    }
 
     @Override
-    public void pause(){}
+    public void pause() {}
 
     @Override
-    public void resume(){}
-
-    @Override
-    public void show(){Gdx.input.setInputProcessor(stage);}
+    public void resume() {}
 
     @Override
     public void dispose() {
+        backgroundTexture.dispose();
+        stage.dispose();
+        if (skin != null) skin.dispose();
     }
 }
