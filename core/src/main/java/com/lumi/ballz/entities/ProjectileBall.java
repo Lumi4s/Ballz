@@ -70,16 +70,16 @@ public class ProjectileBall {
         );
 
         if (minOverlap == overlapLeft) {
-            velocity.x = -Math.abs(velocity.x); // Отскок влево
+            velocity.x = -Math.abs(velocity.x);
             position.x -= minOverlap;
         } else if (minOverlap == overlapRight) {
-            velocity.x = Math.abs(velocity.x);  // Отскок вправо
+            velocity.x = Math.abs(velocity.x);
             position.x += minOverlap;
         } else if (minOverlap == overlapBottom) {
-            velocity.y = -Math.abs(velocity.y); // Отскок вниз
+            velocity.y = -Math.abs(velocity.y);
             position.y -= minOverlap;
         } else if (minOverlap == overlapTop) {
-            velocity.y = Math.abs(velocity.y);  // Отскок вверх
+            velocity.y = Math.abs(velocity.y);
             position.y += minOverlap;
         }
 

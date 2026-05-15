@@ -10,7 +10,7 @@ public class Bonus implements Entity {
     private final Rectangle hitbox;
     private float target_y;
     private boolean collected = false;
-    private float stateTime = 0; // Для анимации пульсации
+    private float stateTime = 0;
 
     public Bonus(Sprite sprite, float x, float y, float size) {
         this.sprite = new Sprite(sprite);
@@ -29,7 +29,6 @@ public class Bonus implements Entity {
             if (Math.abs(hitbox.y - target_y) < 0.001f) hitbox.y = target_y;
         }
 
-        // Эффект пульсации: размер меняется от 0.8 до 1.1
         float scale = 0.95f + MathUtils.sin(stateTime * 5f) * 0.15f;
         sprite.setScale(scale);
         sprite.setPosition(hitbox.x, hitbox.y);

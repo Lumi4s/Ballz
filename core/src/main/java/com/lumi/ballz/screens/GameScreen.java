@@ -21,36 +21,30 @@ import com.lumi.ballz.BallzGame;
 import com.lumi.ballz.entities.Bonus;
 import com.lumi.ballz.entities.EnemySquare;
 import com.lumi.ballz.entities.ProjectileBall;
-import com.lumi.ballz.logic.BallState;
-import com.lumi.ballz.logic.PlayerScore;
+import com.lumi.ballz.logic.*;
 import com.lumi.ballz.ui.GameOverGroup;
-import com.lumi.ballz.logic.LeaderboardManager;
 
 
 public class GameScreen implements Screen {
     private final BallzGame game;
 
-    // Константы мира
     private final int ux = 7;
     private final int uy = 12;
 
     private final float spawnInterval = 0.1f;
     private final float ballSpeed = 15f;
 
-    // Ресурсы
     private Sprite enemySprite, ballSprite, bonusSprite;
     private BitmapFont enemyFont, uiFont;
     private GlyphLayout uiLayout;
     private Texture backgroundTexture;
     private Button exitButtonUI;
 
-    // Камеры и вьюпорты
     private FitViewport gameViewport;
     private FitViewport uiViewport;
     private Stage stage;
     private GameOverGroup gameOverGroup;
 
-    // Состояние игры
     private Array<EnemySquare> enemies;
     private Array<ProjectileBall> ballz;
     private Array<Bonus> bonuses;
@@ -59,6 +53,9 @@ public class GameScreen implements Screen {
     private Vector2 aimPos = new Vector2();
     private Vector2 touchPos = new Vector2();
     private LeaderboardManager LM;
+    private TemplateManager templateManager;
+    private GridSlot[][] loadedTemplate;
+    private int currentTemplateRow = 0;
 
     private boolean isAiming = false;
     private boolean turnProcessing = false;
@@ -137,6 +134,10 @@ public class GameScreen implements Screen {
         ballz = new Array<>();
         bonuses = new Array<>();
         LM = new LeaderboardManager();
+        templateManager = new TemplateManager();
+
+        loadedTemplate = templateManager.loadTemplate("level1");
+
         spawnRow();
     }
 
@@ -150,23 +151,50 @@ public class GameScreen implements Screen {
     }
 
     private void spawnRow() {
-        Array<Integer> columns = new Array<>();
-        for (int i = 0; i < ux; i++) columns.add(i);
-        columns.shuffle();
+        if (loadedTemplate != null && currentTemplateRow < loadedTemplate.length) {
+            GridSlot[] row = loadedTemplate[currentTemplateRow];
 
-        if (MathUtils.randomBoolean(0.3f)) {
-            createBonus(columns.pop());
-        }
+            for (int i = 0; i < ux; i++) {
+                if (i >= row.length) break;
 
-        int enemyCount = MathUtils.random(2, columns.size);
-        for (int i = 0; i < enemyCount; i++) {
-            if (columns.size > 0) {
-                createEnemy(columns.pop());
+                switch (row[i]) {
+                    case ENEMY:
+                        createEnemy(i);
+                        break;
+                    case HARD_ENEMY:
+                        float size = 0.9f;
+                        float spawnX = i + (1f - size) / 2f;
+                        int hp = 15 + score / 5;
+                        Color color = Color.RED;
+                        enemies.add(new EnemySquare(enemySprite, spawnX, uy - 1, size, hp, color, enemyFont));
+                        break;
+                    case BONUS:
+                        createBonus(i);
+                        break;
+                    case EMPTY:
+                    default:
+                        break;
+                }
+            }
+        } else {
+            Array<Integer> columns = new Array<>();
+            for (int i = 0; i < ux; i++) columns.add(i);
+            columns.shuffle();
+
+            if (MathUtils.randomBoolean(0.3f)) {
+                createBonus(columns.pop());
+            }
+
+            int enemyCount = MathUtils.random(2, columns.size);
+            for (int i = 0; i < enemyCount; i++) {
+                if (columns.size > 0) {
+                    createEnemy(columns.pop());
+                }
             }
         }
+
         for (EnemySquare enemy : enemies) enemy.moveDown();
         for (Bonus bonus : bonuses) bonus.moveDown();
-
     }
 
     private void createEnemy(int index) {
@@ -190,19 +218,15 @@ public class GameScreen implements Screen {
 
         ScreenUtils.clear(Color.BLACK);
 
-        // Game
         gameViewport.apply();
         game.batch.setProjectionMatrix(gameViewport.getCamera().combined);
         game.batch.begin();
         game.batch.draw(backgroundTexture, 0, 0, ux, uy);
 
-        // Враги
         for (EnemySquare enemy : enemies) enemy.draw(game.batch);
 
-        // Бонусы
         for (Bonus bonus : bonuses) bonus.draw(game.batch);
 
-        // Прицел
         if (!turnProcessing) {
             float mainBallSize = 0.3f;
             game.batch.draw(ballSprite, startPos.x - mainBallSize / 2f, startPos.y - mainBallSize / 2f, mainBallSize, mainBallSize);
@@ -215,12 +239,9 @@ public class GameScreen implements Screen {
             }
         }
 
-        // Шары
         for (ProjectileBall b : ballz) b.draw(game.batch, ballSprite);
         game.batch.end();
 
-
-        // UI
         uiViewport.apply();
         game.batch.setProjectionMatrix(uiViewport.getCamera().combined);
         game.batch.begin();
@@ -231,13 +252,11 @@ public class GameScreen implements Screen {
     }
 
     private void drawUI() {
-        // Очки
         uiFont.setColor(Color.WHITE);
         String scoreText = String.valueOf(score);
         uiLayout.setText(uiFont, scoreText);
         uiFont.draw(game.batch, uiLayout, 720f - uiLayout.width - 20f, 1280f - 40f);
 
-        // Количество шаров у пушки
         if (!turnProcessing) {
             String countText = "x" + (1 + addBalls);
             uiLayout.setText(uiFont, countText);
@@ -246,7 +265,6 @@ public class GameScreen implements Screen {
     }
 
     private void update(float delta) {
-        // Спавн шаров по таймеру
         if (ballsToSpawn > 0) {
             spawnTimer += delta;
             if (spawnTimer >= spawnInterval) {
@@ -259,7 +277,6 @@ public class GameScreen implements Screen {
             spawnTimer = spawnInterval;
         }
 
-        // Логика шаров
         for (int i = ballz.size - 1; i >= 0; i--) {
             ProjectileBall b = ballz.get(i);
             if (b.getStatus().equals(BallState.FIRE)) {
@@ -290,13 +307,11 @@ public class GameScreen implements Screen {
                     if (b.getBounds().overlaps(bonus.getHitbox())) {
                         addBalls++;
                         bonuses.removeIndex(j);
-                        // Эффекты или звуки
                     }
                 }
             }
         }
 
-        // Обновление каждого врага и бонуса
         for (EnemySquare enemy : enemies) {
             enemy.update(delta);
         }
@@ -304,7 +319,6 @@ public class GameScreen implements Screen {
             bonus.update(delta);
         }
 
-        // Проверка смерти врагов
         for (int i = enemies.size - 1; i >= 0; i--) {
             if (enemies.get(i).isDead()) {
                 score += 10;
@@ -328,6 +342,10 @@ public class GameScreen implements Screen {
                 startPos.set(nextStartPos);
                 ballz.clear();
                 firstBallReturned = false;
+
+                if (loadedTemplate != null) {
+                    currentTemplateRow++;
+                }
 
                 spawnRow();
                 checkGameOver();
@@ -359,6 +377,10 @@ public class GameScreen implements Screen {
         firstBallReturned = false;
         isAiming = false;
         turnProcessing = false;
+
+        if (loadedTemplate != null) {
+            currentTemplateRow = 0;
+        }
 
         startPos.set(3.5f, 2.15f);
         spawnRow();

@@ -46,9 +46,8 @@ public class StartingScreen implements Screen {
         stage = new Stage(uiViewport);
 
         Table table = new Table();
-        table.setFillParent(true); // Таблица растягивается на весь Stage
+        table.setFillParent(true);
 
-        // Создаем кнопки и добавляем их в таблицу
         table.add(createButton("menu_start", () -> game.setScreen(game.gameScreen)))
             .size(BUTTON_WIDTH, BUTTON_HEIGHT)
             .padBottom(BUTTON_SPACING);
@@ -68,7 +67,6 @@ public class StartingScreen implements Screen {
     private Button createButton(String regionName, Runnable action) {
         TextureRegion region = game.menuAtlas.findRegion(regionName);
 
-        // Защита от опечаток в названиях регионов
         if (region == null) {
             Gdx.app.error("UI", "Region not found: " + regionName);
             return new Button();
@@ -87,14 +85,10 @@ public class StartingScreen implements Screen {
     @Override
     public void render(float delta) {
         ScreenUtils.clear(Color.BLACK);
-
-        // Сначала фон
         game.batch.setProjectionMatrix(uiViewport.getCamera().combined);
         game.batch.begin();
         game.batch.draw(backgroundTexture, 0, 0, uiViewport.getWorldWidth(), uiViewport.getWorldHeight());
         game.batch.end();
-
-        // Потом интерфейс
         stage.act(delta);
         stage.draw();
     }
