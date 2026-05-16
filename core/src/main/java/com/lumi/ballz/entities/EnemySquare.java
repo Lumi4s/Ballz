@@ -71,6 +71,8 @@ public class EnemySquare implements Entity{
         return hp <= 0;
     }
 
+    public int getHp() {return hp;}
+
     public float getY() {
         return hitbox.y;
     }

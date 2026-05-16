@@ -54,10 +54,12 @@ public class GameScreen implements Screen {
     private Vector2 touchPos = new Vector2();
     private LeaderboardManager LM;
     private TemplateManager templateManager;
+    private AIPredictor aiPredictor;
     private GridSlot[][] loadedTemplate;
-    private int currentTemplateRow = 0;
+    private Button aiToggleButton;
 
     private boolean isAiming = false;
+    private boolean isAiEnabled = false;
     private boolean turnProcessing = false;
     private boolean firstBallReturned;
     private int score = 0;
@@ -65,6 +67,7 @@ public class GameScreen implements Screen {
     private int ballsToSpawn = 0;
     private float spawnTimer = 0f;
     private float afkTimer = 0f;
+    private int currentTemplateRow = 0;
 
     private enum State {
         PLAYING, GAME_OVER
@@ -97,6 +100,22 @@ public class GameScreen implements Screen {
         gameOverGroup = new GameOverGroup(game, this);
         stage.addActor(gameOverGroup);
         createExitButton();
+        Button.ButtonStyle style = new Button.ButtonStyle();
+        style.up = new TextureRegionDrawable(game.atlas.findRegion("ai_off"));
+        style.checked = new TextureRegionDrawable(game.atlas.findRegion("ai_on"));
+
+        aiToggleButton = new Button(style);
+        aiToggleButton.setPosition(20, 20); // Размести в удобном месте
+
+        aiToggleButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                isAiEnabled = aiToggleButton.isChecked();
+                // Если включили ИИ во время ожидания хода — он сразу выстрелит
+            }
+        });
+
+        stage.addActor(aiToggleButton);
     }
 
     private void createExitButton() {
@@ -135,6 +154,7 @@ public class GameScreen implements Screen {
         bonuses = new Array<>();
         LM = new LeaderboardManager();
         templateManager = new TemplateManager();
+        aiPredictor = new AIPredictor();
 
         loadedTemplate = templateManager.loadTemplate("level1");
 
@@ -275,6 +295,15 @@ public class GameScreen implements Screen {
             }
         } else {
             spawnTimer = spawnInterval;
+            if (state == State.PLAYING && ballz.size == 0 && !turnProcessing && !isAiming) {
+                if (isAiEnabled) {
+                    Vector2 bestAngle = aiPredictor.calculateBestAngle(startPos, ux, uy, enemies, bonuses);
+                    aimPos.set(bestAngle);
+                    ballsToSpawn = 1 + addBalls;
+                    turnProcessing = true;
+                    Gdx.app.log("AI_BOT", String.format("Shot at angle: %.1f", bestAngle.angleDeg()));
+                }
+            }
         }
 
         for (int i = ballz.size - 1; i >= 0; i--) {
@@ -405,7 +434,7 @@ public class GameScreen implements Screen {
         multiplexer.addProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-                if (state == State.PLAYING) {
+                if (state == State.PLAYING && !isAiEnabled) {
                     if (ballz.size == 0) {
                         isAiming = true;
                         updateAim(screenX, screenY);
