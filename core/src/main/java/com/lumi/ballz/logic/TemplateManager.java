@@ -44,7 +44,11 @@ public class TemplateManager {
     public void saveTemplate(GridSlot[][] grid, String templateName) {
         File file = new File(baseDir + templateName + ".json");
         try (FileWriter writer = new FileWriter(file)) {
-            String data = json.prettyPrint(grid);
+            GridSlot[][] reversed = new GridSlot[grid.length][];
+            for (int i = 0; i < grid.length; i++) {
+                reversed[i] = grid[grid.length - 1 - i];
+            }
+            String data = json.prettyPrint(reversed);
             writer.write(data);
         } catch (IOException e) {
             System.err.println("TemplateManager save error: " + e.getMessage());

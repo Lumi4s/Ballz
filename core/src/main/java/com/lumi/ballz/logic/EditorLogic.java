@@ -3,14 +3,13 @@ package com.lumi.ballz.logic;
 import com.badlogic.gdx.graphics.Color;
 
 public class EditorLogic {
-    private final int width;
-    private final int height;
-    private final GridSlot[][] grid;
-
     public static final Color COLOR_EMPTY = Color.valueOf("2A2A2A");
     public static final Color COLOR_ENEMY = Color.valueOf("FF4B4B");
     public static final Color COLOR_BONUS = Color.valueOf("4BFF8E");
     public static final Color COLOR_HARD = Color.valueOf("FFD44B");
+    private final int width;
+    private final int height;
+    private final GridSlot[][] grid;
 
     public EditorLogic(int width, int height) {
         this.width = width;

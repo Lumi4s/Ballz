@@ -6,97 +6,80 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.lumi.ballz.BallzGame;
-import com.lumi.ballz.entities.Bonus;
-import com.lumi.ballz.entities.EnemySquare;
-import com.lumi.ballz.entities.ProjectileBall;
 import com.lumi.ballz.logic.*;
 import com.lumi.ballz.ui.GameOverGroup;
 
 import java.io.File;
 
-
 public class GameScreen implements Screen {
+
+    private static final int UX = 7;
+    private static final int UY = 12;
+
     private final BallzGame game;
-
-    private final int ux = 7;
-    private final int uy = 12;
-
-    private final float spawnInterval = 0.1f;
-    private final float ballSpeed = 15f;
-
-    private Sprite ballSprite;
-    private BitmapFont enemyFont, uiFont;
-    private GlyphLayout uiLayout;
-    private Texture backgroundTexture;
-    private Button exitButtonUI;
 
     private final FitViewport gameViewport;
     private final FitViewport uiViewport;
+    private final GameController controller;
+    private final GameRenderer renderer;
+    private final AIPredictor aiPredictor;
+    private final HighScoreManager hsm;
+    private final Vector2 touchPos = new Vector2();
     private Stage stage;
     private GameOverGroup gameOverGroup;
-
-    private Array<EnemySquare> enemies;
-    private Array<ProjectileBall> ballz;
-    private Array<Bonus> bonuses;
-    private final Vector2 startPos = new Vector2(3.5f, 2.15f);
-    private Vector2 nextStartPos;
-    private final Vector2 aimPos = new Vector2();
-    private final Vector2 touchPos = new Vector2();
-    private TemplateManager templateManager;
-    private AIPredictor aiPredictor;
-    private GridSlot[][] loadedTemplate;
+    private Button exitButtonUI;
     private Button aiToggleButton;
-    private final static HighScoreManager HSM = new HighScoreManager(new File("../HighestScore"));
-
     private boolean isAiming = false;
     private boolean isAiEnabled = false;
-    private boolean turnProcessing = false;
-    private boolean firstBallReturned;
-    private int score = 0;
-    private int addBalls = 0;
-    private int ballsToSpawn = 0;
-    private float spawnTimer = 0f;
-    private final float afkTimer = 0f;
-    private int currentTemplateRow = 0;
-
-    private enum State {
-        PLAYING, GAME_OVER
-    }
-
-    private State state = State.PLAYING;
-
-    private final Color[] colors = {Color.valueOf("FFB7B2"), // Нежно-розовый
-        Color.valueOf("FFDAC1"), // Персиковый
-        Color.valueOf("E2F0CB"), // Мятно-лаймовый
-        Color.valueOf("B5EAD7"), // Аквамарин
-        Color.valueOf("C7CEEA"), // Лавандово-голубой
-        Color.valueOf("FDFD96"), // Пастельно-желтый
-        Color.valueOf("FF9AA2")  // Коралловый пастель
-    };
 
     public GameScreen(BallzGame game) {
         this.game = game;
 
-        gameViewport = new FitViewport(ux, uy);
+        gameViewport = new FitViewport(UX, UY);
         uiViewport = new FitViewport(720, 1280);
 
-        loadAssets();
-        initLogic();
+        hsm = new HighScoreManager(new File("../HighestScore"));
+        aiPredictor = new AIPredictor();
+
+        EntityFactory factory = new EntityFactory(game.atlas, game.enemyFont);
+
+        controller = new GameController(UX, UY, factory, new TemplateManager(),
+            new GameController.GameEventListener() {
+                @Override
+                public void onTurnEnded() {
+                }
+
+                @Override
+                public void onGameOver(int finalScore) {
+                    hsm.checkScore(finalScore);
+                    gameOverGroup.setVisible(true);
+                    gameOverGroup.toFront();
+                }
+
+                @Override
+                public void onBonusCollected() {
+                }
+            });
+
+        Texture background = new Texture(Gdx.files.internal("background.png"));
+        background.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        Sprite ballSprite = game.atlas.createSprite("ball");
+
+        renderer = new GameRenderer(
+            game.batch, gameViewport, uiViewport,
+            background, ballSprite, game.uiFont, hsm, UX, UY);
+
         initUI();
     }
 
@@ -105,380 +88,97 @@ public class GameScreen implements Screen {
         gameOverGroup = new GameOverGroup(game, this);
         stage.addActor(gameOverGroup);
         createExitButton();
-        Button.ButtonStyle style = new Button.ButtonStyle();
-        style.up = new TextureRegionDrawable(game.atlas.findRegion("ai_off"));
-        style.checked = new TextureRegionDrawable(game.atlas.findRegion("ai_on"));
-
-        aiToggleButton = new Button(style);
-        aiToggleButton.setPosition(20, 20);
-
-        aiToggleButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                isAiEnabled = aiToggleButton.isChecked();
-            }
-        });
-
-        stage.addActor(aiToggleButton);
+        createAiToggleButton();
     }
 
     private void createExitButton() {
         TextureRegion region = game.atlas.findRegion("ui_exit");
-        TextureRegionDrawable drawable = new TextureRegionDrawable(region);
-
-        exitButtonUI = new Button(drawable);
+        exitButtonUI = new Button(new TextureRegionDrawable(region));
         exitButtonUI.setSize(100, 106.666f);
         exitButtonUI.setPosition(0, 1280 - 106.666f);
-
         exitButtonUI.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 game.setScreen(game.startingScreen);
             }
         });
-
         stage.addActor(exitButtonUI);
     }
 
-    private void loadAssets() {
-        ballSprite = game.atlas.createSprite("ball");
-        backgroundTexture = new Texture(Gdx.files.internal("background.png"));
-        backgroundTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-
-        enemyFont = game.enemyFont;
-        uiFont = game.uiFont;
-        uiLayout = new GlyphLayout();
-    }
-
-    private void initLogic() {
-        enemies = new Array<>();
-        ballz = new Array<>();
-        bonuses = new Array<>();
-        templateManager = new TemplateManager();
-        aiPredictor = new AIPredictor();
-
-        loadedTemplate = templateManager.loadTemplate("level1");
-
-        spawnRow();
-    }
-
-    private void updateAim(int screenX, int screenY) {
-        gameViewport.unproject(touchPos.set(screenX, screenY));
-        aimPos.set(touchPos).sub(startPos);
-        float angle = aimPos.angleDeg();
-        if (angle < 10 || angle > 270) angle = 10;
-        else if (angle > 170 && angle < 270) angle = 170;
-        aimPos.setAngleDeg(angle).nor();
-    }
-
-    private void spawnRow() {
-        if (loadedTemplate != null && currentTemplateRow < loadedTemplate.length) {
-            GridSlot[] row = loadedTemplate[currentTemplateRow];
-
-            for (int i = 0; i < ux; i++) {
-                if (i >= row.length) break;
-
-                switch (row[i]) {
-                    case ENEMY:
-                        createEnemy(i);
-                        break;
-                    case HARD_ENEMY:
-                        float size = 0.9f;
-                        float spawnX = i + (1f - size) / 2f;
-                        int hp = 15 + score / 5;
-                        Color color = Color.RED;
-                        Sprite enemySprite = game.atlas.createSprite("square");
-                        enemies.add(new EnemySquare(enemySprite, spawnX, uy - 1, size, hp, color, enemyFont));
-                        break;
-                    case BONUS:
-                        createBonus(i);
-                        break;
-                    case EMPTY:
-                    default:
-                        break;
-                }
+    private void createAiToggleButton() {
+        Button.ButtonStyle style = new Button.ButtonStyle();
+        style.up = new TextureRegionDrawable(game.atlas.findRegion("ai_off"));
+        style.checked = new TextureRegionDrawable(game.atlas.findRegion("ai_on"));
+        aiToggleButton = new Button(style);
+        aiToggleButton.setPosition(20, 20);
+        aiToggleButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                isAiEnabled = aiToggleButton.isChecked();
             }
-        } else {
-            Array<Integer> columns = new Array<>();
-            for (int i = 0; i < ux; i++) columns.add(i);
-            columns.shuffle();
-
-            if (MathUtils.randomBoolean(0.3f)) {
-                createBonus(columns.pop());
-            }
-
-            int enemyCount = MathUtils.random(2, columns.size);
-            for (int i = 0; i < enemyCount; i++) {
-                if (columns.size > 0) {
-                    createEnemy(columns.pop());
-                }
-            }
-        }
-
-        for (EnemySquare enemy : enemies) enemy.moveDown();
-        for (Bonus bonus : bonuses) bonus.moveDown();
-    }
-
-    private void createEnemy(int index) {
-        float size = 0.9f;
-        float spawnX = index + (1f - size) / 2f;
-        int hp = MathUtils.random(1, 5 + score / 100);
-        Color color = colors[MathUtils.random(colors.length - 1)];
-        Sprite enemySprite = game.atlas.createSprite("square");
-        enemies.add(new EnemySquare(enemySprite, spawnX, uy - 1, size, hp, color, enemyFont));
-    }
-
-    private void createBonus(int index) {
-        float size = 0.5f;
-        float spawnX = index + (1f - size) / 2f;
-        float spawnY = (uy - 1) + (1f - size) / 2f;
-        Sprite bonusSprite = game.atlas.createSprite("ui_money");
-        bonuses.add(new Bonus(bonusSprite, spawnX, spawnY, size));
+        });
+        stage.addActor(aiToggleButton);
     }
 
     @Override
     public void render(float delta) {
-        update(delta);
+        handleAiTurn();
+        controller.update(delta);
 
         ScreenUtils.clear(Color.BLACK);
+        renderer.renderGame(controller, isAiming);
+        renderer.renderUI(controller);
 
-        gameViewport.apply();
-        game.batch.setProjectionMatrix(gameViewport.getCamera().combined);
-        game.batch.begin();
-        game.batch.draw(backgroundTexture, 0, 0, ux, uy);
-
-        for (EnemySquare enemy : enemies) enemy.draw(game.batch);
-
-        for (Bonus bonus : bonuses) bonus.draw(game.batch);
-
-        if (!turnProcessing) {
-            float mainBallSize = 0.3f;
-            game.batch.draw(ballSprite, startPos.x - mainBallSize / 2f, startPos.y - mainBallSize / 2f, mainBallSize, mainBallSize);
-        }
-        if (isAiming) {
-            for (int i = 1; i <= 3; i++) {
-                float dx = startPos.x + aimPos.x * (i * 0.5f);
-                float dy = startPos.y + aimPos.y * (i * 0.5f);
-                game.batch.draw(ballSprite, dx - 0.05f, dy - 0.05f, 0.1f, 0.1f);
-            }
-        }
-
-        for (ProjectileBall b : ballz) b.draw(game.batch, ballSprite);
-        game.batch.end();
-
-        uiViewport.apply();
-        game.batch.setProjectionMatrix(uiViewport.getCamera().combined);
-        game.batch.begin();
-        drawUI();
-        game.batch.end();
         stage.act(delta);
         stage.draw();
     }
 
-    private void drawUI() {
-        uiFont.setColor(Color.WHITE);
+    private void handleAiTurn() {
+        if (!isAiEnabled) return;
+        if (controller.getState() != GameController.State.PLAYING) return;
+        if (controller.isTurnProcessing() || controller.getBallz().size > 0 || isAiming) return;
 
-        String scoreText = "Score: " + score;
-        uiLayout.setText(uiFont, scoreText);
-        uiFont.draw(game.batch, uiLayout, 720f - uiLayout.width - 20f, 1280f - 40f);
-
-        String highscoreText = "Best: " + HSM.getHighScore();
-        uiLayout.setText(uiFont, highscoreText);
-        uiFont.draw(game.batch, uiLayout, 360f - uiLayout.width, 1280f - 40f);
-
-
-        if (!turnProcessing) {
-            String countText = "x" + (1 + addBalls);
-            uiLayout.setText(uiFont, countText);
-            uiFont.draw(game.batch, uiLayout, 720f / 2f - uiLayout.width / 2f, 120f);
-        }
+        Vector2 best = aiPredictor.calculateBestAngle(
+            controller.getStartPos(), UX, UY,
+            controller.getEnemies(), controller.getBonuses());
+        Gdx.app.log("AI_BOT", String.format("Shot at angle: %.1f", best.angleDeg()));
+        controller.shoot(best);
     }
 
-    private void update(float delta) {
-        if (ballsToSpawn > 0) {
-            spawnTimer += delta;
-            if (spawnTimer >= spawnInterval) {
-
-                ballz.add(new ProjectileBall(startPos, aimPos, ballSpeed));
-                ballsToSpawn--;
-                spawnTimer = 0;
-            }
-        } else {
-            spawnTimer = spawnInterval;
-            if (state == State.PLAYING && ballz.size == 0 && !turnProcessing && !isAiming) {
-                if (isAiEnabled) {
-                    Vector2 bestAngle = aiPredictor.calculateBestAngle(startPos, ux, uy, enemies, bonuses);
-                    aimPos.set(bestAngle);
-                    ballsToSpawn = 1 + addBalls;
-                    turnProcessing = true;
-                    Gdx.app.log("AI_BOT", String.format("Shot at angle: %.1f", bestAngle.angleDeg()));
-                }
-            }
+    private void updateAim(int screenX, int screenY) {
+        gameViewport.unproject(touchPos.set(screenX, screenY));
+        Vector2 aim = new Vector2(touchPos).sub(controller.getStartPos());
+        float angle = aim.angleDeg();
+        if (angle < 10 || angle > 270) {
+            angle = 10;
+        } else if (angle > 170 && angle < 270) {
+            angle = 170;
         }
-
-        for (int i = ballz.size - 1; i >= 0; i--) {
-            ProjectileBall b = ballz.get(i);
-            if (b.getStatus().equals(BallState.FIRE)) {
-                b.update(delta, ux, uy);
-
-                if (b.getPosition().y < 2.15f) {
-                    b.getPosition().y = 2.15f;
-
-                    if (!firstBallReturned) {
-                        firstBallReturned = true;
-                        nextStartPos = new Vector2(b.getPosition().x, 2.15f);
-                        b.setStatus(BallState.WAITING);
-                    } else {
-                        b.setStatus(BallState.RETURNING);
-                    }
-                }
-            } else if (b.getStatus().equals(BallState.RETURNING)) {
-                b.moveTo(delta, nextStartPos, ballSpeed * 1.25f);
-            }
-
-            if (b.getStatus().equals(BallState.FIRE)) {
-                for (EnemySquare enemy : enemies) {
-                    b.checkCollision(enemy, 1);
-                }
-
-                for (int j = bonuses.size - 1; j >= 0; j--) {
-                    Bonus bonus = bonuses.get(j);
-                    if (b.getBounds().overlaps(bonus.getHitbox())) {
-                        addBalls++;
-                        bonuses.removeIndex(j);
-                    }
-                }
-            }
-        }
-
-        for (EnemySquare enemy : enemies) {
-            enemy.update(delta);
-        }
-        for (Bonus bonus : bonuses) {
-            bonus.update(delta);
-        }
-
-        for (int i = enemies.size - 1; i >= 0; i--) {
-            if (enemies.get(i).isDead()) {
-                score += 10;
-                enemies.removeIndex(i);
-            }
-        }
-        checkTurnEnd();
-    }
-
-    private void checkTurnEnd() {
-        if (turnProcessing && ballsToSpawn == 0) {
-            boolean allFinished = true;
-            for (ProjectileBall b : ballz) {
-                if (!b.getStatus().equals(BallState.WAITING)) {
-                    allFinished = false;
-                    break;
-                }
-            }
-
-            if (allFinished && ballz.size > 0) {
-                startPos.set(nextStartPos);
-                ballz.clear();
-                firstBallReturned = false;
-
-                if (loadedTemplate != null) {
-                    currentTemplateRow++;
-                }
-
-                spawnRow();
-                checkGameOver();
-
-                turnProcessing = false;
-            }
-        }
-    }
-
-    private void checkGameOver() {
-        for (EnemySquare enemy : enemies) {
-            if (enemy.getY() <= 3.2f) {
-                HSM.checkScore(score);
-                state = State.GAME_OVER;
-                gameOverGroup.setVisible(true);
-                gameOverGroup.toFront();
-                return;
-            }
-        }
+        aim.setAngleDeg(angle).nor();
+        controller.getAimDir().set(aim);
     }
 
     public void restartGame() {
-        enemies.clear();
-        bonuses.clear();
-        ballz.clear();
-        score = 0;
-        addBalls = 0;
-        ballsToSpawn = 0;
-        firstBallReturned = false;
+        controller.restart();
         isAiming = false;
-        turnProcessing = false;
+        gameOverGroup.setVisible(false);
+    }
 
-        if (loadedTemplate != null) {
-            currentTemplateRow = 0;
-        }
+    @Override
+    public void show() {
+        restartGame();
+        setupInput();
+    }
 
-        startPos.set(3.5f, 2.15f);
-        spawnRow();
-
-        state = State.PLAYING;
+    @Override
+    public void hide() {
+        Gdx.input.setInputProcessor(null);
     }
 
     @Override
     public void resize(int width, int height) {
         gameViewport.update(width, height, true);
         uiViewport.update(width, height, true);
-    }
-
-    @Override
-    public void show() {
-        setupInput();
-    }
-
-    private void setupInput() {
-        InputMultiplexer multiplexer = new InputMultiplexer();
-        multiplexer.addProcessor(stage);
-        multiplexer.addProcessor(new InputAdapter() {
-            @Override
-            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-                if (state == State.PLAYING && !isAiEnabled) {
-                    if (ballz.size == 0) {
-                        isAiming = true;
-                        updateAim(screenX, screenY);
-                    }
-                }
-                return true;
-            }
-
-            @Override
-            public boolean touchDragged(int screenX, int screenY, int pointer) {
-                if (state == State.PLAYING) {
-                    if (isAiming) updateAim(screenX, screenY);
-                }
-                return true;
-            }
-
-            @Override
-            public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-                if (state == State.PLAYING) {
-                    if (ballz.size == 0 && isAiming) {
-                        isAiming = false;
-                        ballsToSpawn = 1 + addBalls;
-                        turnProcessing = true;
-                    }
-                }
-                return true;
-            }
-        });
-        Gdx.input.setInputProcessor(multiplexer);
-    }
-
-    @Override
-    public void hide() {
-        Gdx.input.setInputProcessor(null);
     }
 
     @Override
@@ -493,5 +193,36 @@ public class GameScreen implements Screen {
     public void dispose() {
     }
 
+    private void setupInput() {
+        InputMultiplexer multiplexer = new InputMultiplexer();
+        multiplexer.addProcessor(stage);
+        multiplexer.addProcessor(new InputAdapter() {
+            @Override
+            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                if (controller.getState() == GameController.State.PLAYING && !isAiEnabled) {
+                    if (controller.getBallz().size == 0) {
+                        isAiming = true;
+                        updateAim(screenX, screenY);
+                    }
+                }
+                return true;
+            }
 
+            @Override
+            public boolean touchDragged(int screenX, int screenY, int pointer) {
+                if (isAiming) updateAim(screenX, screenY);
+                return true;
+            }
+
+            @Override
+            public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+                if (controller.getState() == GameController.State.PLAYING && isAiming) {
+                    isAiming = false;
+                    controller.shoot(controller.getAimDir());
+                }
+                return true;
+            }
+        });
+        Gdx.input.setInputProcessor(multiplexer);
+    }
 }

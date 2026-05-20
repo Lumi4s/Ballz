@@ -18,15 +18,13 @@ import com.lumi.ballz.BallzGame;
 
 public class StartingScreen implements Screen {
     private final BallzGame game;
-
-    private Skin skin;
-    private Stage stage;
-    private Texture backgroundTexture;
     private final ExtendViewport uiViewport;
-
     private final float BUTTON_WIDTH = 400f;
     private final float BUTTON_HEIGHT = 150f;
     private final float BUTTON_SPACING = 40f;
+    private Skin skin;
+    private Stage stage;
+    private Texture backgroundTexture;
 
     public StartingScreen(BallzGame game) {
         this.game = game;

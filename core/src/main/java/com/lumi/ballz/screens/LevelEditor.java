@@ -18,22 +18,16 @@ import com.lumi.ballz.logic.GridSlot;
 import com.lumi.ballz.logic.TemplateManager;
 
 public class LevelEditor implements Screen {
+    private static final int GRID_WIDTH = 7;
+    private static final int GRID_HEIGHT = 10;
+    private static final Color COLOR_BG = Color.valueOf("121212");
+    private static final String LEVEL_NAME = "level";
     private final BallzGame game;
     private final Stage stage;
     private final ExtendViewport uiViewport;
-
-    private static final int GRID_WIDTH = 7;
-    private static final int GRID_HEIGHT = 10;
-
     private final EditorLogic editorLogic;
-    private TextButton[][] buttons = new TextButton[GRID_HEIGHT][GRID_WIDTH];
     private final TemplateManager templateManager;
-
-    private final Color COLOR_BG = Color.valueOf("121212");
-    private final Color COLOR_ENEMY = Color.valueOf("FF4B4B");
-    private final Color COLOR_BONUS = Color.valueOf("4BFF8E");
-    private final Color COLOR_HARD = Color.valueOf("FFD44B");
-    private final Color COLOR_EMPTY = Color.valueOf("2A2A2A");
+    private TextButton[][] buttons = new TextButton[GRID_HEIGHT][GRID_WIDTH];
 
     public LevelEditor(BallzGame game) {
         this.game = game;
@@ -133,9 +127,7 @@ public class LevelEditor implements Screen {
         btnSave.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                String fileName = "pattern_" + System.currentTimeMillis();
                 saveGrid();
-                showMessage();
             }
         });
 
@@ -174,8 +166,7 @@ public class LevelEditor implements Screen {
     }
 
     public void saveGrid() {
-        String fileName = "pattern_" + System.currentTimeMillis();
-        templateManager.saveTemplate(editorLogic.getGrid(), fileName);
+        templateManager.saveTemplate(editorLogic.getGrid(), LEVEL_NAME);
         showMessage();
     }
 
@@ -238,9 +229,9 @@ public class LevelEditor implements Screen {
         titleLabel.setFontScale(1f);
         dialog.add(titleLabel).colspan(2).padBottom(30).row();
 
-        addLegendRow(dialog, COLOR_ENEMY, "Enemy", labelStyle);
-        addLegendRow(dialog, COLOR_BONUS, "+1 Ball Bonus", labelStyle);
-        addLegendRow(dialog, COLOR_HARD, "Hard Enemy", labelStyle);
+        addLegendRow(dialog, EditorLogic.COLOR_ENEMY, "Enemy", labelStyle);
+        addLegendRow(dialog, EditorLogic.COLOR_BONUS, "+1 Ball Bonus", labelStyle);
+        addLegendRow(dialog, EditorLogic.COLOR_HARD, "Hard Enemy", labelStyle);
 
         TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
         btnStyle.font = game.uiFont;

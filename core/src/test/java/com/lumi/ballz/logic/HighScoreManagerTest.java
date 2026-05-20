@@ -7,15 +7,14 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
 import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class HighScoreManagerTest {
 
-    private HighScoreManager highScoreManager;
-    private File tempFile;
-
     @TempDir
     Path tempDir;
+    private HighScoreManager highScoreManager;
+    private File tempFile;
 
     @BeforeEach
     void setUp() {

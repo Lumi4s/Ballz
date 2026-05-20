@@ -7,9 +7,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class EditorLogicTest {
 
-    private EditorLogic editorLogic;
     private final int WIDTH = 7;
     private final int HEIGHT = 10;
+    private EditorLogic editorLogic;
 
     @BeforeEach
     void setUp() {

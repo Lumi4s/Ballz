@@ -44,13 +44,15 @@ public class AIPredictor {
         tempVel.set(1, 0).setAngleDeg(angleDeg).scl(0.15f);
 
         float radius = 0.15f;
-        int maxSteps = 500;
+        int maxSteps = 3000;
 
         int[] enemyHp = new int[enemies.size];
         for (int i = 0; i < enemies.size; i++) enemyHp[i] = enemies.get(i).getHp();
         boolean[] bonusCollected = new boolean[bonuses.size];
 
         int hitsInThisTurn = 0;
+        int wallBouncesSinceLastHit = 0;
+        boolean anyBonusCollectedInThisShot = false;
 
         for (int step = 0; step < maxSteps; step++) {
             tempPos.add(tempVel);
@@ -62,7 +64,7 @@ public class AIPredictor {
             if (tempPos.x - radius < 0 || tempPos.x + radius > ux) {
                 tempVel.x *= -1;
                 tempPos.x = MathUtils.clamp(tempPos.x, radius, ux - radius);
-                score -= 5;
+                wallBouncesSinceLastHit++;
             }
             if (tempPos.y > uy) {
                 tempVel.y *= -1;
@@ -77,6 +79,8 @@ public class AIPredictor {
                 if (!bonusCollected[i] && virtualBounds.overlaps(bonuses.get(i).getHitbox())) {
                     score += 2000;
                     bonusCollected[i] = true;
+                    anyBonusCollectedInThisShot = true;
+                    wallBouncesSinceLastHit = 0;
                 }
             }
 
@@ -91,6 +95,7 @@ public class AIPredictor {
                     hitsInThisTurn++;
 
                     score += (10 + hitsInThisTurn);
+                    wallBouncesSinceLastHit = 0;
 
                     if (enemyHp[i] <= 0) {
                         score += 100;
@@ -101,6 +106,9 @@ public class AIPredictor {
                     break;
                 }
             }
+        }
+        if (hitsInThisTurn == 0 && !anyBonusCollectedInThisShot) {
+            score -= (wallBouncesSinceLastHit * 15);
         }
         return score;
     }

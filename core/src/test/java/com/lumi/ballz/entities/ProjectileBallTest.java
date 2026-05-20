@@ -69,4 +69,46 @@ class ProjectileBallTest {
 
         assertTrue(ball.getVelocity().x < 0, "Ball should reflect after collision");
     }
+
+    @Test
+    void testUpdate_BouncesOffLeftWall() {
+        ProjectileBall wallBall = new ProjectileBall(new Vector2(0.2f, 5f), new Vector2(-1, 0), 10f);
+
+        wallBall.update(0.1f, ux, uy);
+
+        assertTrue(wallBall.getVelocity().x > 0, "Velocity X should be positive after hitting left wall");
+        assertTrue(wallBall.getPosition().x >= wallBall.radius);
+    }
+
+    @Test
+    void testUpdate_BouncesOffCeiling() {
+        ProjectileBall ceilingBall = new ProjectileBall(new Vector2(5f, 9.8f), new Vector2(0, 1), 10f);
+
+        ceilingBall.update(0.1f, ux, uy);
+
+        assertTrue(ceilingBall.getVelocity().y < 0, "Velocity Y should be negative after hitting ceiling");
+        assertTrue(ceilingBall.getPosition().y <= uy);
+    }
+
+    @Test
+    void testMoveTo_DoesNotReachTarget_StatusRemainsUnchanged() {
+        Vector2 target = new Vector2(5f, 50f);
+        float delta = 0.016f;
+
+        ball.moveTo(delta, target, speed);
+
+        assertEquals(BallState.FIRE, ball.getStatus(), "Status should remain FIRE when target not reached");
+        assertNotEquals(target.y, ball.getPosition().y, 0.1f);
+    }
+
+    @Test
+    void testCheckCollision_NoHit_HurtNotCalled() {
+        EnemySquare mockEnemy = Mockito.mock(EnemySquare.class);
+        Rectangle enemyHitbox = new Rectangle(20, 20, 1, 1);
+        when(mockEnemy.getHitbox()).thenReturn(enemyHitbox);
+
+        ball.checkCollision(mockEnemy, 1);
+
+        verify(mockEnemy, never()).hurt(anyInt());
+    }
 }

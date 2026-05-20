@@ -9,13 +9,13 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 
 public class EnemySquare implements Entity {
+    private static final GlyphLayout layout = new GlyphLayout();
     private final Sprite sprite;
     private final Rectangle hitbox;
-    private int hp;
     private final Color color;
-    private static final GlyphLayout layout = new GlyphLayout();
-    private float target_y;
     private final BitmapFont font;
+    private int hp;
+    private float target_y;
 
     public EnemySquare(Sprite textureSource, float x, float y, float size, int hp, Color color, BitmapFont font) {
         this.hp = hp;

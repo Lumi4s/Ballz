@@ -9,11 +9,11 @@ import com.lumi.ballz.logic.BallState;
 
 public class ProjectileBall {
     private final Vector2 position;
-    private Vector2 velocity;
-    float radius = 0.15f;
     private final Rectangle bounds = new Rectangle();
-    private BallState status = BallState.FIRE;
     private final Vector2 tmpVector = new Vector2();
+    float radius = 0.15f;
+    private Vector2 velocity;
+    private BallState status = BallState.FIRE;
 
     public ProjectileBall(Vector2 startPos, Vector2 direction, float speed) {
         this.position = new Vector2(startPos);

@@ -10,10 +10,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TemplateManagerTest {
 
-    private TemplateManager templateManager;
-
     @TempDir
     Path tempDir;
+    private TemplateManager templateManager;
 
     @BeforeEach
     void setUp() {
@@ -36,10 +35,12 @@ class TemplateManagerTest {
         assertEquals(originalGrid.length, loadedGrid.length, "Rows count mismatch");
         assertEquals(originalGrid[0].length, loadedGrid[0].length, "Columns count mismatch");
 
-        for (int i = 0; i < originalGrid.length; i++) {
+        int rows = originalGrid.length;
+        for (int i = 0; i < rows; i++) {
             for (int j = 0; j < originalGrid[i].length; j++) {
-                assertEquals(originalGrid[i][j], loadedGrid[i][j],
-                    String.format("Mismatch at [%d][%d]: expected %s, got %s", i, j, originalGrid[i][j], loadedGrid[i][j]));
+                assertEquals(originalGrid[rows - 1 - i][j], loadedGrid[i][j],
+                    String.format("Mismatch at [%d][%d]: expected %s, got %s",
+                        i, j, originalGrid[rows - 1 - i][j], loadedGrid[i][j]));
             }
         }
     }
