@@ -206,10 +206,6 @@ public class GameController {
         }
     }
 
-    private void clearBonuses() {
-
-    }
-
     private void spawnRow() {
         if (loadedTemplate != null && currentTemplateRow < loadedTemplate.length) {
             spawnFromTemplate(loadedTemplate[currentTemplateRow]);
