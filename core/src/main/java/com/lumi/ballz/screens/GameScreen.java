@@ -6,7 +6,10 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.*;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -42,18 +45,18 @@ public class GameScreen implements Screen {
     private Texture backgroundTexture;
     private Button exitButtonUI;
 
-    private FitViewport gameViewport;
-    private FitViewport uiViewport;
+    private final FitViewport gameViewport;
+    private final FitViewport uiViewport;
     private Stage stage;
     private GameOverGroup gameOverGroup;
 
     private Array<EnemySquare> enemies;
     private Array<ProjectileBall> ballz;
     private Array<Bonus> bonuses;
-    private Vector2 startPos = new Vector2(3.5f, 2.15f);
+    private final Vector2 startPos = new Vector2(3.5f, 2.15f);
     private Vector2 nextStartPos;
-    private Vector2 aimPos = new Vector2();
-    private Vector2 touchPos = new Vector2();
+    private final Vector2 aimPos = new Vector2();
+    private final Vector2 touchPos = new Vector2();
     private TemplateManager templateManager;
     private AIPredictor aiPredictor;
     private GridSlot[][] loadedTemplate;
@@ -68,7 +71,7 @@ public class GameScreen implements Screen {
     private int addBalls = 0;
     private int ballsToSpawn = 0;
     private float spawnTimer = 0f;
-    private float afkTimer = 0f;
+    private final float afkTimer = 0f;
     private int currentTemplateRow = 0;
 
     private enum State {

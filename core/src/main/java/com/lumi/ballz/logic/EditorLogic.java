@@ -32,10 +32,18 @@ public class EditorLogic {
 
         GridSlot next;
         switch (grid[y][x]) {
-            case EMPTY:      next = GridSlot.ENEMY; break;
-            case ENEMY:      next = GridSlot.BONUS; break;
-            case BONUS:      next = GridSlot.HARD_ENEMY; break;
-            default:         next = GridSlot.EMPTY; break;
+            case EMPTY:
+                next = GridSlot.ENEMY;
+                break;
+            case ENEMY:
+                next = GridSlot.BONUS;
+                break;
+            case BONUS:
+                next = GridSlot.HARD_ENEMY;
+                break;
+            default:
+                next = GridSlot.EMPTY;
+                break;
         }
         grid[y][x] = next;
     }
@@ -48,6 +56,11 @@ public class EditorLogic {
         return grid;
     }
 
-    public int getWidth() { return width; }
-    public int getHeight() { return height; }
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
 }

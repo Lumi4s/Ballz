@@ -22,7 +22,7 @@ public class StartingScreen implements Screen {
     private Skin skin;
     private Stage stage;
     private Texture backgroundTexture;
-    private ExtendViewport uiViewport;
+    private final ExtendViewport uiViewport;
 
     private final float BUTTON_WIDTH = 400f;
     private final float BUTTON_HEIGHT = 150f;
@@ -109,10 +109,12 @@ public class StartingScreen implements Screen {
     }
 
     @Override
-    public void pause() {}
+    public void pause() {
+    }
 
     @Override
-    public void resume() {}
+    public void resume() {
+    }
 
     @Override
     public void dispose() {

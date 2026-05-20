@@ -13,21 +13,21 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.lumi.ballz.BallzGame;
+import com.lumi.ballz.logic.EditorLogic;
 import com.lumi.ballz.logic.GridSlot;
 import com.lumi.ballz.logic.TemplateManager;
-import com.lumi.ballz.logic.EditorLogic;
 
 public class LevelEditor implements Screen {
     private final BallzGame game;
-    private Stage stage;
-    private ExtendViewport uiViewport;
+    private final Stage stage;
+    private final ExtendViewport uiViewport;
 
     private static final int GRID_WIDTH = 7;
     private static final int GRID_HEIGHT = 10;
 
-    private EditorLogic editorLogic;
+    private final EditorLogic editorLogic;
     private TextButton[][] buttons = new TextButton[GRID_HEIGHT][GRID_WIDTH];
-    private TemplateManager templateManager;
+    private final TemplateManager templateManager;
 
     private final Color COLOR_BG = Color.valueOf("121212");
     private final Color COLOR_ENEMY = Color.valueOf("FF4B4B");
@@ -90,7 +90,7 @@ public class LevelEditor implements Screen {
         gridTable.setBackground(game.skin.newDrawable("white", Color.valueOf("1A1A1A")));
         gridTable.pad(10);
 
-        buttons = new TextButton[GRID_HEIGHT][GRID_WIDTH]; // Инициализируем массив кнопок
+        buttons = new TextButton[GRID_HEIGHT][GRID_WIDTH];
 
         for (int y = 0; y < GRID_HEIGHT; y++) {
             for (int x = 0; x < GRID_WIDTH; x++) {
@@ -99,13 +99,13 @@ public class LevelEditor implements Screen {
 
                 final TextButton cell = new TextButton("", game.skin);
                 cell.getStyle().up = game.skin.newDrawable("white", Color.WHITE);
-                cell.setColor(EditorLogic.COLOR_EMPTY); // Используем константу из логики
+                cell.setColor(EditorLogic.COLOR_EMPTY);
 
                 cell.addListener(new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
-                        editorLogic.cycleSlot(fx, fy); // Вызываем логику!
-                        updateCellVisual(fx, fy);     // Обновляем визуал
+                        editorLogic.cycleSlot(fx, fy);
+                        updateCellVisual(fx, fy);
                     }
                 });
 
@@ -148,10 +148,18 @@ public class LevelEditor implements Screen {
         GridSlot slot = editorLogic.getSlot(x, y);
         Color color;
         switch (slot) {
-            case ENEMY:      color = EditorLogic.COLOR_ENEMY; break;
-            case BONUS:      color = EditorLogic.COLOR_BONUS; break;
-            case HARD_ENEMY: color = EditorLogic.COLOR_HARD; break;
-            default:         color = EditorLogic.COLOR_EMPTY; break;
+            case ENEMY:
+                color = EditorLogic.COLOR_ENEMY;
+                break;
+            case BONUS:
+                color = EditorLogic.COLOR_BONUS;
+                break;
+            case HARD_ENEMY:
+                color = EditorLogic.COLOR_HARD;
+                break;
+            default:
+                color = EditorLogic.COLOR_EMPTY;
+                break;
         }
         buttons[y][x].setColor(color);
     }
@@ -270,10 +278,31 @@ public class LevelEditor implements Screen {
         stage.draw();
     }
 
-    @Override public void show() { Gdx.input.setInputProcessor(stage); }
-    @Override public void resize(int width, int height) { uiViewport.update(width, height, true); }
-    @Override public void hide() { Gdx.input.setInputProcessor(null); }
-    @Override public void pause() {}
-    @Override public void resume() {}
-    @Override public void dispose() { stage.dispose(); }
+    @Override
+    public void show() {
+        Gdx.input.setInputProcessor(stage);
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        uiViewport.update(width, height, true);
+    }
+
+    @Override
+    public void hide() {
+        Gdx.input.setInputProcessor(null);
+    }
+
+    @Override
+    public void pause() {
+    }
+
+    @Override
+    public void resume() {
+    }
+
+    @Override
+    public void dispose() {
+        stage.dispose();
+    }
 }

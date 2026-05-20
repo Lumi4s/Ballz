@@ -86,7 +86,9 @@ public class ProjectileBall {
         enemy.hurt(damageMultiplier);
     }
 
-    public void setSpeed(float speed){velocity = velocity.scl(speed);}
+    public void setSpeed(float speed) {
+        velocity = velocity.scl(speed);
+    }
 
     public Vector2 getVelocity() {
         return velocity;
@@ -101,6 +103,11 @@ public class ProjectileBall {
         return bounds;
     }
 
-    public BallState getStatus(){return status;}
-    public void setStatus(BallState status){this.status = status;}
+    public BallState getStatus() {
+        return status;
+    }
+
+    public void setStatus(BallState status) {
+        this.status = status;
+    }
 }

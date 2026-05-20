@@ -46,7 +46,7 @@ public class BallzGame extends Game {
         this.setScreen(startingScreen);
     }
 
-    private void loadAssets(){
+    private void loadAssets() {
         atlas = new TextureAtlas(Gdx.files.internal("atlas/pack.atlas"));
         menuAtlas = new TextureAtlas(Gdx.files.internal("atlas/menu_pack.atlas"));
 
