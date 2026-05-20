@@ -24,6 +24,8 @@ import com.lumi.ballz.entities.ProjectileBall;
 import com.lumi.ballz.logic.*;
 import com.lumi.ballz.ui.GameOverGroup;
 
+import java.io.File;
+
 
 public class GameScreen implements Screen {
     private final BallzGame game;
@@ -34,7 +36,7 @@ public class GameScreen implements Screen {
     private final float spawnInterval = 0.1f;
     private final float ballSpeed = 15f;
 
-    private Sprite enemySprite, ballSprite, bonusSprite;
+    private Sprite ballSprite;
     private BitmapFont enemyFont, uiFont;
     private GlyphLayout uiLayout;
     private Texture backgroundTexture;
@@ -52,11 +54,11 @@ public class GameScreen implements Screen {
     private Vector2 nextStartPos;
     private Vector2 aimPos = new Vector2();
     private Vector2 touchPos = new Vector2();
-    private LeaderboardManager LM;
     private TemplateManager templateManager;
     private AIPredictor aiPredictor;
     private GridSlot[][] loadedTemplate;
     private Button aiToggleButton;
+    private final static HighScoreManager HSM = new HighScoreManager(new File("../HighestScore"));
 
     private boolean isAiming = false;
     private boolean isAiEnabled = false;
@@ -105,13 +107,12 @@ public class GameScreen implements Screen {
         style.checked = new TextureRegionDrawable(game.atlas.findRegion("ai_on"));
 
         aiToggleButton = new Button(style);
-        aiToggleButton.setPosition(20, 20); // Размести в удобном месте
+        aiToggleButton.setPosition(20, 20);
 
         aiToggleButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 isAiEnabled = aiToggleButton.isChecked();
-                // Если включили ИИ во время ожидания хода — он сразу выстрелит
             }
         });
 
@@ -137,9 +138,7 @@ public class GameScreen implements Screen {
     }
 
     private void loadAssets() {
-        enemySprite = game.atlas.createSprite("square");
         ballSprite = game.atlas.createSprite("ball");
-        bonusSprite = game.atlas.createSprite("ui_money");
         backgroundTexture = new Texture(Gdx.files.internal("background.png"));
         backgroundTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
 
@@ -152,7 +151,6 @@ public class GameScreen implements Screen {
         enemies = new Array<>();
         ballz = new Array<>();
         bonuses = new Array<>();
-        LM = new LeaderboardManager();
         templateManager = new TemplateManager();
         aiPredictor = new AIPredictor();
 
@@ -186,6 +184,7 @@ public class GameScreen implements Screen {
                         float spawnX = i + (1f - size) / 2f;
                         int hp = 15 + score / 5;
                         Color color = Color.RED;
+                        Sprite enemySprite = game.atlas.createSprite("square");
                         enemies.add(new EnemySquare(enemySprite, spawnX, uy - 1, size, hp, color, enemyFont));
                         break;
                     case BONUS:
@@ -222,6 +221,7 @@ public class GameScreen implements Screen {
         float spawnX = index + (1f - size) / 2f;
         int hp = MathUtils.random(1, 5 + score / 100);
         Color color = colors[MathUtils.random(colors.length - 1)];
+        Sprite enemySprite = game.atlas.createSprite("square");
         enemies.add(new EnemySquare(enemySprite, spawnX, uy - 1, size, hp, color, enemyFont));
     }
 
@@ -229,6 +229,7 @@ public class GameScreen implements Screen {
         float size = 0.5f;
         float spawnX = index + (1f - size) / 2f;
         float spawnY = (uy - 1) + (1f - size) / 2f;
+        Sprite bonusSprite = game.atlas.createSprite("ui_money");
         bonuses.add(new Bonus(bonusSprite, spawnX, spawnY, size));
     }
 
@@ -273,9 +274,15 @@ public class GameScreen implements Screen {
 
     private void drawUI() {
         uiFont.setColor(Color.WHITE);
-        String scoreText = String.valueOf(score);
+
+        String scoreText = "Score: " + score;
         uiLayout.setText(uiFont, scoreText);
         uiFont.draw(game.batch, uiLayout, 720f - uiLayout.width - 20f, 1280f - 40f);
+
+        String highscoreText = "Best: " + HSM.getHighScore();
+        uiLayout.setText(uiFont, highscoreText);
+        uiFont.draw(game.batch, uiLayout, 360f - uiLayout.width, 1280f - 40f);
+
 
         if (!turnProcessing) {
             String countText = "x" + (1 + addBalls);
@@ -387,7 +394,7 @@ public class GameScreen implements Screen {
     private void checkGameOver() {
         for (EnemySquare enemy : enemies) {
             if (enemy.getY() <= 3.2f) {
-                LM.addScore(new PlayerScore(game.nickname, score));
+                HSM.checkScore(score);
                 state = State.GAME_OVER;
                 gameOverGroup.setVisible(true);
                 gameOverGroup.toFront();

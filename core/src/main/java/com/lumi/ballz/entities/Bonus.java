@@ -13,7 +13,7 @@ public class Bonus implements Entity {
     private float stateTime = 0;
 
     public Bonus(Sprite sprite, float x, float y, float size) {
-        this.sprite = new Sprite(sprite);
+        this.sprite = sprite;
         this.sprite.setSize(size, size);
         this.sprite.setOriginCenter();
         this.sprite.setPosition(x, y);

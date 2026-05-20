@@ -21,7 +21,7 @@ public class EnemySquare implements Entity{
         this.hp = hp;
         this.hitbox = new Rectangle(x, y, size, size);
 
-        this.sprite = new Sprite(textureSource);
+        this.sprite = textureSource;
         this.sprite.setSize(size, size);
         this.sprite.setPosition(x, y);
         this.color = color;

@@ -15,6 +15,7 @@ import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.lumi.ballz.BallzGame;
 import com.lumi.ballz.logic.GridSlot;
 import com.lumi.ballz.logic.TemplateManager;
+import com.lumi.ballz.logic.EditorLogic;
 
 public class LevelEditor implements Screen {
     private final BallzGame game;
@@ -24,7 +25,7 @@ public class LevelEditor implements Screen {
     private static final int GRID_WIDTH = 7;
     private static final int GRID_HEIGHT = 10;
 
-    private GridSlot[][] grid = new GridSlot[GRID_HEIGHT][GRID_WIDTH];
+    private EditorLogic editorLogic;
     private TextButton[][] buttons = new TextButton[GRID_HEIGHT][GRID_WIDTH];
     private TemplateManager templateManager;
 
@@ -38,6 +39,7 @@ public class LevelEditor implements Screen {
         this.game = game;
         uiViewport = new ExtendViewport(720, 1280);
         stage = new Stage(uiViewport);
+        editorLogic = new EditorLogic(GRID_WIDTH, GRID_HEIGHT);
         templateManager = new TemplateManager();
 
         initUI();
@@ -88,20 +90,22 @@ public class LevelEditor implements Screen {
         gridTable.setBackground(game.skin.newDrawable("white", Color.valueOf("1A1A1A")));
         gridTable.pad(10);
 
+        buttons = new TextButton[GRID_HEIGHT][GRID_WIDTH]; // Инициализируем массив кнопок
+
         for (int y = 0; y < GRID_HEIGHT; y++) {
             for (int x = 0; x < GRID_WIDTH; x++) {
                 final int fx = x;
                 final int fy = y;
-                grid[y][x] = GridSlot.EMPTY;
 
                 final TextButton cell = new TextButton("", game.skin);
                 cell.getStyle().up = game.skin.newDrawable("white", Color.WHITE);
-                cell.setColor(COLOR_EMPTY);
+                cell.setColor(EditorLogic.COLOR_EMPTY); // Используем константу из логики
 
                 cell.addListener(new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
-                        cycleSlot(fx, fy);
+                        editorLogic.cycleSlot(fx, fy); // Вызываем логику!
+                        updateCellVisual(fx, fy);     // Обновляем визуал
                     }
                 });
 
@@ -130,7 +134,7 @@ public class LevelEditor implements Screen {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 String fileName = "pattern_" + System.currentTimeMillis();
-                templateManager.saveTemplate(grid, fileName);
+                saveGrid();
                 showMessage();
             }
         });
@@ -138,6 +142,33 @@ public class LevelEditor implements Screen {
         footer.add(btnClear).size(300, 100).padRight(20);
         footer.add(btnSave).size(300, 100);
         root.add(footer).fillX();
+    }
+
+    private void updateCellVisual(int x, int y) {
+        GridSlot slot = editorLogic.getSlot(x, y);
+        Color color;
+        switch (slot) {
+            case ENEMY:      color = EditorLogic.COLOR_ENEMY; break;
+            case BONUS:      color = EditorLogic.COLOR_BONUS; break;
+            case HARD_ENEMY: color = EditorLogic.COLOR_HARD; break;
+            default:         color = EditorLogic.COLOR_EMPTY; break;
+        }
+        buttons[y][x].setColor(color);
+    }
+
+    private void clearGrid() {
+        editorLogic.clear();
+        for (int y = 0; y < GRID_HEIGHT; y++) {
+            for (int x = 0; x < GRID_WIDTH; x++) {
+                buttons[y][x].setColor(EditorLogic.COLOR_EMPTY);
+            }
+        }
+    }
+
+    public void saveGrid() {
+        String fileName = "pattern_" + System.currentTimeMillis();
+        templateManager.saveTemplate(editorLogic.getGrid(), fileName);
+        showMessage();
     }
 
     private void showMessage() {
@@ -230,45 +261,6 @@ public class LevelEditor implements Screen {
 
         table.add(colorBox).size(40).padBottom(15).padRight(20);
         table.add(textLabel).left().expandX().padBottom(15).row();
-    }
-
-    private void cycleSlot(int x, int y) {
-        GridSlot next;
-        Color targetColor;
-
-        switch (grid[y][x]) {
-            case EMPTY:
-                next = GridSlot.ENEMY;
-                targetColor = COLOR_ENEMY;
-                break;
-            case ENEMY:
-                next = GridSlot.BONUS;
-                targetColor = COLOR_BONUS;
-                break;
-            case BONUS:
-                next = GridSlot.HARD_ENEMY;
-                targetColor = COLOR_HARD;
-                break;
-            default:
-                next = GridSlot.EMPTY;
-                targetColor = COLOR_EMPTY;
-                break;
-        }
-
-        grid[y][x] = next;
-        buttons[y][x].setColor(targetColor);
-
-        buttons[y][x].setTransform(true);
-        buttons[y][x].clearActions();
-    }
-
-    private void clearGrid() {
-        for (int y = 0; y < GRID_HEIGHT; y++) {
-            for (int x = 0; x < GRID_WIDTH; x++) {
-                grid[y][x] = GridSlot.EMPTY;
-                buttons[y][x].setColor(COLOR_EMPTY);
-            }
-        }
     }
 
     @Override

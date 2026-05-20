@@ -16,7 +16,6 @@ public class AIPredictor {
         float bestScore = -1;
         float bestAngleDeg = 90;
 
-        // ЭТАП 1: Грубое сканирование (быстро находим перспективные зоны)
         for (float angle = 10; angle <= 170; angle += 4f) {
             float score = simulateShot(startPos, angle, ux, uy, enemies, bonuses);
             if (score > bestScore) {

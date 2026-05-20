@@ -1,38 +1,65 @@
 package com.lumi.ballz.logic;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonWriter;
-import com.badlogic.gdx.utils.SerializationException;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 public class TemplateManager {
-    private static final String SAVE_PATH = "templates/level_patterns.json";
-    private Json json;
+    private final Json json;
+    private final String baseDir;
 
     public TemplateManager() {
-        json = new Json();
-        json.setOutputType(JsonWriter.OutputType.json);
+        this.json = new Json();
+        this.json.setOutputType(JsonWriter.OutputType.json);
+
+        String path = "templates/";
+        if (Gdx.files.local("templates/").exists()) {
+            path = "templates/";
+        }
+        this.baseDir = path;
+
+        File dir = new File(baseDir);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+    }
+
+    public TemplateManager(String baseDir) {
+        this.json = new Json();
+        this.json.setOutputType(JsonWriter.OutputType.json);
+        this.baseDir = baseDir;
+
+        File dir = new File(baseDir);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
     }
 
     public void saveTemplate(GridSlot[][] grid, String templateName) {
-        try {
-            FileHandle file = Gdx.files.local("templates/" + templateName + ".json");
+        File file = new File(baseDir + templateName + ".json");
+        try (FileWriter writer = new FileWriter(file)) {
             String data = json.prettyPrint(grid);
-            file.writeString(data, false);
-            Gdx.app.log("TemplateManager", "Saved to: " + file.path());
-        } catch (Exception e) {
-            Gdx.app.error("TemplateManager", "Save failed", e);
+            writer.write(data);
+        } catch (IOException e) {
+            System.err.println("TemplateManager save error: " + e.getMessage());
         }
     }
 
     public GridSlot[][] loadTemplate(String templateName) {
-        FileHandle file = Gdx.files.local("templates/" + templateName + ".json");
+        File file = new File(baseDir + templateName + ".json");
         if (file.exists()) {
             try {
-                return json.fromJson(GridSlot[][].class, file.readString());
-            } catch (SerializationException e) {
-                Gdx.app.error("TemplateManager", "Load failed", e);
+                byte[] encoded = Files.readAllBytes(file.toPath());
+                String content = new String(encoded, StandardCharsets.UTF_8);
+                return json.fromJson(GridSlot[][].class, content);
+            } catch (IOException e) {
+                System.err.println("TemplateManager load error: " + e.getMessage());
             }
         }
         return null;
