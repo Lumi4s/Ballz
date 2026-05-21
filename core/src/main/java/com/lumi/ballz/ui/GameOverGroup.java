@@ -21,6 +21,7 @@ public class GameOverGroup extends Table {
         row();
 
         TextButton restartBtn = new TextButton("Try Again", game.skin);
+        restartBtn.getLabel().setColor(Color.BLACK);
         restartBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -32,6 +33,7 @@ public class GameOverGroup extends Table {
         row();
 
         TextButton exitBtn = new TextButton("Menu", game.skin);
+        exitBtn.getLabel().setColor(Color.BLACK);
         exitBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -44,3 +46,4 @@ public class GameOverGroup extends Table {
         setVisible(false);
     }
 }
+

@@ -1,4 +1,9 @@
 # Ballz
-University course work. I need to clone Ballz game. I use LibGDX, someday I will end this task. But for now it's frozen with minor changes sometimes.
+[Отчёт.docx](%D0%9E%D1%82%D1%87%D1%91%D1%82.docx)
+
 ![Алгоритм](./algoritm.svg)
 ![Диаграмма классов](./diagram.svg)
+![Рисунок2](./Рисунок%202.svg)
+![Рисунок3](./Рисунок%203.svg)
+![Рисунок4](./Рисунок%204.svg)
+![Рисунок5](./Рисунок%205.svg)
