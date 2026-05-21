@@ -1,0 +1,339 @@
+@startuml
+enum com.lumi.ballz.logic.BallState {
++  FIRE
++  WAITING
++  RETURNING
+}
+
+interface com.lumi.ballz.entities.Entity {
+~ void draw(SpriteBatch)
+~ void moveDown()
+~ void update(float)
+~ Rectangle getHitbox()
+~ float getY()
+}
+
+class com.lumi.ballz.screens.GameScreen {
+- {static} int UX
+- {static} int UY
+- BallzGame game
+- FitViewport gameViewport
+- FitViewport uiViewport
+- GameController controller
+- GameRenderer renderer
+- AIPredictor aiPredictor
+- HighScoreManager hsm
+- Vector2 touchPos
+- Stage stage
+- GameOverGroup gameOverGroup
+- Button exitButtonUI
+- Button aiToggleButton
+- boolean isAiming
+- boolean isAiEnabled
+- void initUI()
+- void createExitButton()
+- void createAiToggleButton()
++ void render(float)
+- void handleAiTurn()
+- void updateAim(int,int)
++ void restartGame()
++ void show()
++ void hide()
++ void resize(int,int)
++ void pause()
++ void resume()
++ void dispose()
+- void setupInput()
+}
+
+
+enum com.lumi.ballz.logic.GridSlot {
++  EMPTY
++  ENEMY
++  BONUS
++  HARD_ENEMY
+}
+
+class com.lumi.ballz.screens.StartingScreen {
+- BallzGame game
+- ExtendViewport uiViewport
+- float BUTTON_WIDTH
+- float BUTTON_HEIGHT
+- float BUTTON_SPACING
+- Skin skin
+- Stage stage
+- Texture backgroundTexture
+- void loadAssets()
+- void initUI()
+- Button createButton(String,Runnable)
++ void render(float)
++ void show()
++ void resize(int,int)
++ void hide()
++ void pause()
++ void resume()
++ void dispose()
+}
+
+
+class com.lumi.ballz.logic.GameController {
++ {static} float FLOOR_Y
++ {static} float GAME_OVER_Y
+- {static} float SPAWN_INTERVAL
+- {static} float BALL_SPEED
+- int ux
+- int uy
+- Array<EnemySquare> enemies
+- Array<ProjectileBall> ballz
+- Array<Bonus> bonuses
+- Vector2 startPos
+- Vector2 aimDir
+- IEntityFactory factory
+- TemplateManager templateManager
+- GameEventListener listener
+- int score
+- int addBalls
+- int currentTemplateRow
+- int ballsToSpawn
+- float spawnTimer
+- boolean turnProcessing
+- boolean firstBallReturned
+- Vector2 nextStartPos
+- State state
+- GridSlot[][] loadedTemplate
++ void shoot(Vector2)
++ void update(float)
++ void restart()
+- void handleSpawning(float)
+- void updateBalls(float)
+- void handleFloorCollision(ProjectileBall)
+- void checkBallEnemyCollisions(ProjectileBall)
+- void checkBallBonusCollisions(ProjectileBall)
+- void updateEntities(float)
+- void removeDeadEnemies()
+- void DestroyBonusesOutOfBounds()
+- void checkTurnEnd()
+- void checkGameOver()
+- void spawnRow()
+- void spawnFromTemplate(GridSlot[])
+- void spawnRandomRow()
+- void createEnemy(int)
+- void createHardEnemy(int)
+- void createBonus(int)
++ Array<EnemySquare> getEnemies()
++ Array<ProjectileBall> getBallz()
++ Array<Bonus> getBonuses()
++ Vector2 getStartPos()
++ Vector2 getAimDir()
++ int getScore()
++ int getAddBalls()
++ boolean isTurnProcessing()
++ State getState()
+}
+
+
+enum com.lumi.ballz.logic.State {
++  PLAYING
++  GAME_OVER
+}
+
+interface com.lumi.ballz.logic.GameController$GameEventListener {
+~ void onTurnEnded()
+~ void onGameOver(int)
+~ void onBonusCollected()
+}
+
+class com.lumi.ballz.logic.HighScoreManager {
+- ObjectMapper mapper
+- File storageFile
+- int highScore
+- void loadHighScore()
+- void saveHighScore()
++ int getHighScore()
++ void checkScore(int)
+}
+
+
+class com.lumi.ballz.BallzGame {
++ TextureAtlas atlas
++ TextureAtlas menuAtlas
++ SpriteBatch batch
++ StartingScreen startingScreen
++ GameScreen gameScreen
++ LevelEditor levelEditor
++ BitmapFont enemyFont
++ BitmapFont uiFont
++ Skin skin
++ String nickname
++ void render()
++ void create()
+- void loadAssets()
++ void dispose()
+}
+
+
+class com.lumi.ballz.logic.EntityFactory {
+- {static} Color[] COLORS
+- TextureAtlas atlas
+- BitmapFont enemyFont
++ EnemySquare createEnemy(float,float,float,int,Color)
++ Bonus createBonus(float,float,float)
+}
+
+
+class com.lumi.ballz.screens.GameRenderer {
+- {static} float MAIN_BALL_SIZE
+- SpriteBatch batch
+- FitViewport gameViewport
+- FitViewport uiViewport
+- Texture background
+- Sprite ballSprite
+- BitmapFont uiFont
+- GlyphLayout layout
+- HighScoreManager hsm
+- int ux
+- int uy
++ void renderGame(GameController,boolean)
++ void renderUI(GameController)
+}
+
+
+class com.lumi.ballz.logic.TemplateManager {
+- Json json
+- String baseDir
++ void saveTemplate(GridSlot[][],String)
++ GridSlot[][] loadTemplate(String)
+}
+
+
+class com.lumi.ballz.ui.GameOverGroup {
+}
+interface com.lumi.ballz.logic.IEntityFactory {
+~ EnemySquare createEnemy(float,float,float,int,Color)
+~ Bonus createBonus(float,float,float)
+}
+
+class com.lumi.ballz.logic.AIPredictor {
+- Rectangle virtualBounds
+- Vector2 tempPos
+- Vector2 tempVel
++ Vector2 calculateBestAngle(Vector2,int,int,Array<EnemySquare>,Array<Bonus>)
+- float simulateShot(Vector2,float,int,int,Array<EnemySquare>,Array<Bonus>)
+- void reflect(Vector2,Vector2,Rectangle,float)
+}
+
+
+class com.lumi.ballz.screens.LevelEditor {
+- {static} int GRID_WIDTH
+- {static} int GRID_HEIGHT
+- {static} Color COLOR_BG
+- {static} String LEVEL_NAME
+- BallzGame game
+- Stage stage
+- ExtendViewport uiViewport
+- EditorLogic editorLogic
+- TemplateManager templateManager
+- TextButton[][] buttons
+- void initUI()
+- void updateCellVisual(int,int)
+- void clearGrid()
++ void saveGrid()
+- void showMessage()
+- void showInfoDialog()
+- void addLegendRow(Table,Color,String,Label.LabelStyle)
++ void render(float)
++ void show()
++ void resize(int,int)
++ void hide()
++ void pause()
++ void resume()
++ void dispose()
+}
+
+
+class com.lumi.ballz.entities.Bonus {
+- Sprite sprite
+- Rectangle hitbox
+- float target_y
+- boolean collected
+- float stateTime
++ void update(float)
++ void draw(SpriteBatch)
++ void moveDown()
++ void collect()
++ boolean isCollected()
++ Sprite getSprite()
++ Rectangle getHitbox()
++ float getY()
+}
+
+
+class com.lumi.ballz.logic.EditorLogic {
++ {static} Color COLOR_EMPTY
++ {static} Color COLOR_ENEMY
++ {static} Color COLOR_BONUS
++ {static} Color COLOR_HARD
+- int width
+- int height
+- GridSlot[][] grid
++ void clear()
++ void cycleSlot(int,int)
++ GridSlot getSlot(int,int)
++ GridSlot[][] getGrid()
++ int getWidth()
++ int getHeight()
+}
+
+
+class com.lumi.ballz.entities.ProjectileBall {
+- Vector2 position
+- Rectangle bounds
+- Vector2 tmpVector
+~ float radius
+- Vector2 velocity
+- BallState status
++ void update(float,int,int)
++ void moveTo(float,Vector2,float)
++ void draw(SpriteBatch,Sprite)
++ void checkCollision(EnemySquare,int)
++ void setSpeed(float)
++ Vector2 getVelocity()
++ Vector2 getPosition()
++ Rectangle getBounds()
++ BallState getStatus()
++ void setStatus(BallState)
+}
+
+
+class com.lumi.ballz.entities.EnemySquare {
+- {static} GlyphLayout layout
+- Sprite sprite
+- Rectangle hitbox
+- Color color
+- BitmapFont font
+- int hp
+- float target_y
++ void draw(SpriteBatch)
++ void moveDown()
++ void update(float)
++ void hurt(int)
++ Rectangle getHitbox()
++ boolean isDead()
++ int getHp()
++ float getY()
++ Color getColor()
+}
+
+
+
+
+com.badlogic.gdx.Screen <|.. com.lumi.ballz.screens.GameScreen
+com.badlogic.gdx.Screen <|.. com.lumi.ballz.screens.StartingScreen
+com.lumi.ballz.logic.GameController +.. com.lumi.ballz.logic.GameController$GameEventListener
+com.badlogic.gdx.Game <|-- com.lumi.ballz.BallzGame
+com.lumi.ballz.logic.IEntityFactory <|.. com.lumi.ballz.logic.EntityFactory
+com.badlogic.gdx.scenes.scene2d.ui.Table <|-- com.lumi.ballz.ui.GameOverGroup
+com.badlogic.gdx.Screen <|.. com.lumi.ballz.screens.LevelEditor
+com.lumi.ballz.entities.Entity <|.. com.lumi.ballz.entities.Bonus
+com.lumi.ballz.entities.Entity <|.. com.lumi.ballz.entities.EnemySquare
+@enduml
